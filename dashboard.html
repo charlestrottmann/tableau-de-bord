@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau de bord — stratégies de tendance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#E7EBEE;
+  --panel:#FCFDFE;
+  --ink:#14202B;
+  --muted:#61737F;
+  --rule:#C9D3DA;
+  --rule-soft:#DFE6EA;
+  --pos:#16745A;
+  --pos-bg:#E4F0EB;
+  --neg:#A6322A;
+  --neg-bg:#F6E6E4;
+  --serif:"Spectral",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground);
+  background-image:
+    linear-gradient(to right,rgba(20,32,43,.035) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(20,32,43,.035) 1px,transparent 1px);
+  background-size:28px 28px;
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:40px 24px 72px}
+.eyebrow{
+  font-family:var(--mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+}
+
+/* ---------- header ---------- */
+header{border-bottom:1.5px solid var(--ink);padding-bottom:14px;margin-bottom:8px}
+.head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+h1{font-family:var(--serif);font-weight:600;font-size:38px;line-height:1;margin:6px 0 0;letter-spacing:-.01em}
+.asof{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:right;line-height:1.7}
+.asof b{color:var(--ink);font-weight:600}
+.banner{
+  margin:16px 0 0;padding:9px 14px;border:1px solid var(--rule);
+  background:#F3EEE1;font-family:var(--mono);font-size:11.5px;line-height:1.6;
+}
+.banner.hidden{display:none}
+
+/* ---------- sections ---------- */
+section{margin-top:44px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:16px}
+.sec-head h2{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;margin:0;color:var(--ink)}
+.sec-head .line{flex:1;height:1px;background:var(--rule)}
+.sec-head .note{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+
+/* ---------- verdict panels ---------- */
+.verdicts{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:var(--panel);border:1px solid var(--rule);padding:22px 24px 20px}
+.card h3{font-family:var(--serif);font-size:22px;font-weight:600;margin:6px 0 2px;letter-spacing:-.01em}
+.card .byline{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-bottom:20px}
+.verdict{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid;margin-bottom:6px}
+.verdict .lab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.verdict .val{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1;margin-left:auto}
+.v-in{border-color:var(--pos);background:var(--pos-bg);color:var(--pos)}
+.v-out{border-color:var(--neg);background:var(--neg-bg);color:var(--neg)}
+.card .because{font-size:14.5px;color:var(--muted);margin:14px 0 4px;line-height:1.55}
+.card .because b{color:var(--ink);font-weight:500}
+.tree{width:100%;height:auto;margin-top:10px}
+.tree .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;fill:var(--ink)}
+.tree .lbl-s{font-family:var(--mono);font-size:8.5px;fill:var(--muted)}
+.tree .box{fill:none;stroke:var(--rule);stroke-width:1}
+.tree .ln{stroke:var(--rule);stroke-width:1;fill:none}
+.tree .off{opacity:.28}
+.tree .on .box{stroke:var(--ink);stroke-width:1.4;fill:#fff}
+.tree .on .ln{stroke:var(--ink);stroke-width:1.6}
+.tree .on .lbl{font-weight:600}
+.tree .term-in .box{stroke:var(--pos);fill:var(--pos-bg)}
+.tree .term-in .lbl{fill:var(--pos)}
+.tree .term-out .box{stroke:var(--neg);fill:var(--neg-bg)}
+.tree .term-out .lbl{fill:var(--neg)}
+.next{font-family:var(--mono);font-size:10.5px;color:var(--muted);
+  border-top:1px solid var(--rule-soft);margin-top:16px;padding-top:10px}
+
+/* ---------- indicator table ---------- */
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--rule)}
+th{font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th.num,td.num{text-align:right}
+td{padding:13px 14px;border-bottom:1px solid var(--rule-soft);font-size:14.5px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.row{cursor:pointer}
+tr.row:hover{background:#F2F6F8}
+.name{font-weight:500}
+.name small{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:400;margin-top:2px}
+.val{font-family:var(--mono);font-size:17px;font-weight:600}
+.sub{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.chip{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;padding:4px 9px;border:1px solid}
+.chip.pos{color:var(--pos);border-color:var(--pos);background:var(--pos-bg)}
+.chip.neg{color:var(--neg);border-color:var(--neg);background:var(--neg-bg)}
+.caret{font-family:var(--mono);color:var(--muted);font-size:11px}
+tr.detail td{background:#F2F6F8;padding:0;border-bottom:1px solid var(--rule)}
+tr.detail.hidden{display:none}
+.detail-inner{padding:16px 14px 18px;display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+.hist{font-family:var(--mono);font-size:11.5px;border-collapse:collapse}
+.hist td{padding:2px 14px 2px 0;border:none;font-size:11.5px}
+.hist td.v{text-align:right;font-weight:500}
+.detail-inner .meta{font-size:13px;color:var(--muted);max-width:340px;line-height:1.6}
+.detail-inner a{color:var(--ink)}
+
+/* ---------- market ---------- */
+.market{display:grid;grid-template-columns:1.15fr 1fr;gap:20px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.stat{background:var(--panel);padding:16px 18px}
+.stat .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-size:21px;font-weight:600;margin-top:5px}
+.stat .d{font-family:var(--mono);font-size:11px;margin-top:3px}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.chart{background:var(--panel);border:1px solid var(--rule);padding:16px 18px}
+.legend{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;gap:16px;margin-top:8px}
+.legend i{display:inline-block;width:14px;height:0;border-top:1.5px solid;margin-right:5px;vertical-align:middle}
+
+/* ---------- footer ---------- */
+footer{margin-top:52px;border-top:1px solid var(--rule);padding-top:20px;
+  display:grid;grid-template-columns:1fr 1fr;gap:32px}
+footer h4{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 10px;font-weight:500}
+footer p,footer li{font-size:13.5px;color:var(--muted);line-height:1.6}
+footer ul{margin:0;padding-left:18px}
+.cal{font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.9}
+.cal b{color:var(--ink);font-weight:500}
+
+@media (max-width:820px){
+  .verdicts,.market,footer{grid-template-columns:1fr}
+  h1{font-size:30px}
+  th.hide,td.hide{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .card,.chart,table{animation:rise .5s ease both}
+  .verdicts .card:nth-child(2){animation-delay:.07s}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="head-row">
+    <div>
+      <div class="eyebrow">Suivi de stratégies de tendance</div>
+      <h1>Tableau de bord</h1>
+    </div>
+    <div class="asof" id="asof"></div>
+  </div>
+</header>
+<div class="banner hidden" id="banner"></div>
+
+<section>
+  <div class="sec-head"><h2>Signaux</h2><div class="line"></div>
+    <div class="note" id="signal-note"></div></div>
+  <div class="verdicts" id="verdicts"></div>
+</section>
+
+<section>
+  <div class="sec-head"><h2>Indicateurs avancés</h2><div class="line"></div>
+    <div class="note">cliquer une ligne pour l'historique</div></div>
+  <table>
+    <thead><tr>
+      <th>Indicateur</th><th class="num">Valeur</th><th class="num hide">Seuil</th>
+      <th class="hide">Mois de réf.</th><th class="hide">Publié le</th>
+      <th class="num hide">24 mois</th><th class="num">Statut</th><th></th>
+    </tr></thead>
+    <tbody id="ind-body"></tbody>
+  </table>
+</section>
+
+<section>
+  <div class="sec-head"><h2>S&amp;P 500</h2><div class="line"></div>
+    <div class="note" id="spx-note"></div></div>
+  <div class="market">
+    <div class="chart">
+      <div id="spx-chart"></div>
+      <div class="legend">
+        <span><i style="border-color:var(--ink)"></i>Cours</span>
+        <span><i style="border-color:#7C9AAE"></i>MM 50</span>
+        <span><i style="border-color:#B0A27E;border-top-style:dashed"></i>MM 200</span>
+      </div>
+    </div>
+    <div class="stat-grid" id="spx-stats"></div>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <h4>Méthode</h4>
+    <ul>
+      <li><b>Global Growth Cycle</b> — investi si l'indice de diffusion des CLI de l'OCDE ≥ 50 % ; sinon, arbitrage par la MM 50 jours. Évaluation le 15 du mois (délai de publication OCDE de 9 à 14 jours).</li>
+      <li><b>Growth Trend Timing</b> — investi si les glissements annuels d'INDPRO <i>et</i> de RRSFS sont positifs ; sinon, arbitrage par la MM 200 jours. Évaluation à la clôture du dernier jour de bourse du mois.</li>
+      <li>Les deux stratégies portent sur des données révisables : le signal d'un mois passé peut changer rétrospectivement.</li>
+    </ul>
+  </div>
+  <div>
+    <h4>Sources &amp; prochaines publications</h4>
+    <div class="cal" id="cal"></div>
+    <p style="margin-top:14px">OCDE, <i>Composite Leading Indicators</i> · Federal Reserve Bank of St. Louis (FRED/ALFRED), séries INDPRO et RRSFS · cours de clôture S&amp;P 500.</p>
+  </div>
+</footer>
+
+</div>
+
+<script>
+/* ============================================================
+   Données de démonstration — remplacées par data.json dès que
+   le collecteur (collect.py) a tourné une première fois.
+   ============================================================ */
+const DEMO = {
+  demo: true,
+  generated_at: "2026-07-27T07:30:00Z",
+  indicators: {
+    cli_diffusion: {
+      label: "Indice de diffusion — CLI OCDE",
+      code: "OCDE · 17 pays · variation m/m",
+      value: 0.647, display: "64,7 %", threshold: "≥ 50 %",
+      ok: true, ref_month: "2026-06", published: "2026-07-07",
+      detail: "11 des 17 pays en hausse",
+      history: [["2026-06",0.647],["2026-05",0.588],["2026-04",0.529],["2026-03",0.471],
+                ["2026-02",0.412],["2026-01",0.353],["2025-12",0.412],["2025-11",0.471],
+                ["2025-10",0.529],["2025-09",0.588],["2025-08",0.647],["2025-07",0.706],
+                ["2025-06",0.647],["2025-05",0.588],["2025-04",0.529],["2025-03",0.588],
+                ["2025-02",0.647],["2025-01",0.706],["2024-12",0.765],["2024-11",0.706],
+                ["2024-10",0.647],["2024-09",0.588],["2024-08",0.529],["2024-07",0.471]],
+      fmt: "pct", url: "https://www.oecd.org/en/data/datasets/oecd-composite-leading-indicators-clis.html"
+    },
+    indpro: {
+      label: "Production industrielle", code: "FRED · INDPRO · glissement annuel",
+      value: 0.021, display: "+2,1 %", threshold: "> 0 %",
+      ok: true, ref_month: "2026-06", published: "2026-07-16",
+      detail: "indice 104,2 contre 102,1 un an plus tôt",
+      history: [["2026-06",0.021],["2026-05",0.018],["2026-04",0.012],["2026-03",0.009],
+                ["2026-02",0.004],["2026-01",-0.002],["2025-12",-0.006],["2025-11",-0.003],
+                ["2025-10",0.002],["2025-09",0.007],["2025-08",0.011],["2025-07",0.014],
+                ["2025-06",0.016],["2025-05",0.013],["2025-04",0.009],["2025-03",0.006],
+                ["2025-02",0.002],["2025-01",-0.001],["2024-12",-0.004],["2024-11",-0.002],
+                ["2024-10",0.001],["2024-09",0.005],["2024-08",0.008],["2024-07",0.010]],
+      fmt: "pct1", url: "https://fred.stlouisfed.org/series/INDPRO"
+    },
+    rrsfs: {
+      label: "Ventes de détail réelles", code: "FRED · RRSFS · glissement annuel",
+      value: -0.004, display: "−0,4 %", threshold: "> 0 %",
+      ok: false, ref_month: "2026-06", published: "2026-07-16",
+      detail: "225 100 contre 226 000 M$ un an plus tôt",
+      history: [["2026-06",-0.004],["2026-05",0.001],["2026-04",0.006],["2026-03",0.011],
+                ["2026-02",0.014],["2026-01",0.009],["2025-12",0.005],["2025-11",0.002],
+                ["2025-10",null],["2025-09",0.008],["2025-08",0.012],["2025-07",0.015],
+                ["2025-06",0.018],["2025-05",0.016],["2025-04",0.013],["2025-03",0.010],
+                ["2025-02",0.007],["2025-01",0.011],["2024-12",0.014],["2024-11",0.017],
+                ["2024-10",0.015],["2024-09",0.012],["2024-08",0.009],["2024-07",0.006]],
+      fmt: "pct1", url: "https://fred.stlouisfed.org/series/RRSFS"
+    }
+  },
+  spx: {
+    date: "2026-07-24", close: 6842.15, ma50: 6710.44, ma200: 6455.90,
+    series: [6180,6210,6165,6240,6295,6260,6320,6380,6350,6410,6470,6440,6390,6455,6510,
+             6480,6540,6600,6570,6520,6580,6650,6620,6690,6740,6700,6660,6720,6790,6842]
+  },
+  calendar: [
+    ["CLI OCDE (données de juillet)", "2026-09-07"],
+    ["INDPRO (juillet)", "2026-08-14"],
+    ["RRSFS (juillet)", "2026-08-14"]
+  ]
+};
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const nf = (n,d=2) => n.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pctS = v => (v>=0?'+':'−') + nf(Math.abs(v*100),1) + ' %';
+const MOIS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const fMonth = s => { const [y,m]=s.split('-'); return MOIS[+m-1]+' '+y; };
+const fDate = s => { const d=new Date(s+'T00:00:00'); return d.getDate()+' '+MOIS[d.getMonth()]+' '+d.getFullYear(); };
+
+function sparkline(vals,{w=118,h=26,zero=false}={}){
+  const pts = vals.filter(v=>v!=null);
+  if(!pts.length) return '';
+  let lo=Math.min(...pts), hi=Math.max(...pts);
+  if(zero){ lo=Math.min(lo,0); hi=Math.max(hi,0); }
+  const pad=(hi-lo)*0.12||1; lo-=pad; hi+=pad;
+  const x=i=>i*(w/(vals.length-1)), y=v=>h-((v-lo)/(hi-lo))*h;
+  let d='',pen=false;
+  vals.forEach((v,i)=>{ if(v==null){pen=false;return;} d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)+' '; pen=true; });
+  const z = zero&&lo<0&&hi>0
+    ? `<line x1="0" x2="${w}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke="var(--rule)" stroke-width="1"/>` : '';
+  const last=vals.findLast?vals.findLast(v=>v!=null):pts[pts.length-1];
+  const li=vals.lastIndexOf(last);
+  const col = zero ? (last>=0?'var(--pos)':'var(--neg)') : 'var(--ink)';
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${z}
+    <path d="${d.trim()}" fill="none" stroke="${col}" stroke-width="1.4" stroke-linejoin="round"/>
+    <circle cx="${x(li).toFixed(1)}" cy="${y(last).toFixed(1)}" r="2.2" fill="${col}"/></svg>`;
+}
+
+/* ---------- decision trees ---------- */
+function tree(cfg){
+  // cfg: {rootLabel, rootVal, branch:'top'|'bottom', maLabel, maBranch:'top'|'bottom', verdict}
+  const on = (c,active) => `<g class="${active?'on '+(c||''):'off'}">`;
+  const topActive = cfg.branch==='top';
+  const nodeBox = (x,y,w,h)=>`<rect class="box" x="${x}" y="${y}" width="${w}" height="${h}"/>`;
+  const t=(x,y,txt,cls='lbl',anchor='middle')=>`<text class="${cls}" x="${x}" y="${y}" text-anchor="${anchor}">${txt}</text>`;
+  let s = `<svg class="tree" viewBox="0 0 400 152" role="img" aria-label="Arbre de décision">`;
+  // root
+  s += `<g class="on">${nodeBox(2,58,104,34)}${t(54,74,cfg.rootLabel.split('|')[0])}${t(54,86,cfg.rootLabel.split('|')[1],'lbl-s')}</g>`;
+  // branch up -> invest directly
+  s += on('term-in',topActive) + `<path class="ln" d="M106 68 C 130 68 130 26 158 26"/>`
+     + t(132,20,cfg.yesLabel,'lbl-s') + nodeBox(160,10,86,32) + t(203,30,'S&amp;P 500') + `</g>`;
+  // branch down -> MA test
+  s += on('',!topActive) + `<path class="ln" d="M106 82 C 130 82 130 112 158 112"/>`
+     + t(132,106,cfg.noLabel,'lbl-s') + nodeBox(160,95,86,34)
+     + t(203,110,cfg.maLabel) + t(203,122,'vs cours','lbl-s') + `</g>`;
+  // MA -> above
+  const above = !topActive && cfg.maBranch==='top';
+  s += on('term-in',above) + `<path class="ln" d="M246 105 C 268 105 272 82 296 82"/>`
+     + t(272,78,'au-dessus','lbl-s') + nodeBox(298,66,98,30) + t(347,85,'S&amp;P 500') + `</g>`;
+  const below = !topActive && cfg.maBranch==='bottom';
+  s += on('term-out',below) + `<path class="ln" d="M246 119 C 268 119 272 136 296 136"/>`
+     + t(272,133,'en dessous','lbl-s') + nodeBox(298,120,98,30) + t(347,139,'Cash') + `</g>`;
+  return s+`</svg>`;
+}
+
+/* ---------- rendering ---------- */
+function render(D){
+  const I = D.indicators, S = D.spx;
+
+  // — dates
+  $('#asof').innerHTML =
+    `dernière clôture <b>${fDate(S.date)}</b><br>macro arrêtée au <b>${fMonth(I.indpro.ref_month)}</b><br>`
+    + `page générée le ${fDate(D.generated_at.slice(0,10))}`;
+
+  if(D.demo){
+    $('#banner').classList.remove('hidden');
+    $('#banner').innerHTML = '<b>Données de démonstration.</b> Le fichier <code>data.json</code> n\'a pas été trouvé : '
+      + 'lancez <code>python collect.py</code> pour alimenter la page en données réelles.';
+  }
+
+  // — signaux
+  const aboveMA50 = S.close >= S.ma50, aboveMA200 = S.close >= S.ma200;
+  const ggcGrowth = I.cli_diffusion.ok;
+  const gttGrowth = I.indpro.ok && I.rrsfs.ok;
+  const ggcInvested = ggcGrowth || aboveMA50;
+  const gttInvested = gttGrowth || aboveMA200;
+
+  const strategies = [
+    { name:"Global Growth Cycle", by:"Grzegorz Link · 2021",
+      invested:ggcInvested,
+      because: ggcGrowth
+        ? `L'indice de diffusion (<b>${I.cli_diffusion.display}</b>) est au-dessus de 50 % : phase d'expansion, le filtre de tendance ne s'applique pas.`
+        : `Indice de diffusion sous 50 % (<b>${I.cli_diffusion.display}</b>) : le filtre MM 50 jours décide — cours <b>${aboveMA50?'au-dessus':'en dessous'}</b> de la moyenne.`,
+      tree: tree({rootLabel:"Diffusion CLI|"+I.cli_diffusion.display, yesLabel:"≥ 50 %", noLabel:"< 50 %",
+                  branch: ggcGrowth?'top':'bottom', maLabel:"MM 50 j",
+                  maBranch: aboveMA50?'top':'bottom'}),
+      next: D.next_ggc || "Prochaine évaluation : le 15 du mois, après publication de l'OCDE." },
+    { name:"Growth Trend Timing", by:"Philosophical Economics · 2016",
+      invested:gttInvested,
+      because: gttGrowth
+        ? `INDPRO (<b>${I.indpro.display}</b>) et RRSFS (<b>${I.rrsfs.display}</b>) progressent tous deux sur un an : le filtre de tendance reste désactivé.`
+        : `${!I.indpro.ok&&!I.rrsfs.ok?'INDPRO et RRSFS reculent':(!I.rrsfs.ok?'RRSFS recule':'INDPRO recule')} sur un an : le filtre MM 200 jours décide — cours <b>${aboveMA200?'au-dessus':'en dessous'}</b> de la moyenne.`,
+      tree: tree({rootLabel:"INDPRO &amp; RRSFS|a/a", yesLabel:"les deux &gt; 0", noLabel:"au moins un &lt; 0",
+                  branch: gttGrowth?'top':'bottom', maLabel:"MM 200 j",
+                  maBranch: aboveMA200?'top':'bottom'}),
+      next: D.next_gtt || "Prochaine évaluation : clôture du dernier jour de bourse du mois." }
+  ];
+
+  $('#verdicts').innerHTML = strategies.map(s=>`
+    <div class="card">
+      <div class="eyebrow">Stratégie</div>
+      <h3>${s.name}</h3>
+      <div class="byline">${s.by}</div>
+      <div class="verdict ${s.invested?'v-in':'v-out'}">
+        <span class="lab">Position</span>
+        <span class="val">${s.invested?'S&amp;P 500':'Cash'}</span>
+      </div>
+      <p class="because">${s.because}</p>
+      ${s.tree}
+      <div class="next">${s.next}</div>
+    </div>`).join('');
+
+  $('#signal-note').textContent = (ggcInvested===gttInvested)
+    ? 'les deux stratégies concordent' : 'les deux stratégies divergent';
+
+  // — indicateurs
+  const rows = [I.cli_diffusion, I.indpro, I.rrsfs];
+  $('#ind-body').innerHTML = rows.map((r,i)=>{
+    const vals = r.history.map(h=>h[1]).slice().reverse();
+    const spark = sparkline(vals,{zero:r.fmt!=='pct'});
+    const hist = r.history.slice(0,12).map(h=>
+      `<tr><td>${fMonth(h[0])}</td><td class="v">${h[1]==null?'n.d.':(r.fmt==='pct'?nf(h[1]*100,1)+' %':pctS(h[1]))}</td></tr>`).join('');
+    return `
+    <tr class="row" data-i="${i}" tabindex="0" role="button" aria-expanded="false">
+      <td class="name">${r.label}<small>${r.code}</small></td>
+      <td class="num"><span class="val ${r.ok?'pos':'neg'}">${r.display}</span>
+          <div class="sub">${r.detail}</div></td>
+      <td class="num hide sub">${r.threshold}</td>
+      <td class="hide sub">${fMonth(r.ref_month)}</td>
+      <td class="hide sub">${fDate(r.published)}</td>
+      <td class="num hide">${spark}</td>
+      <td class="num"><span class="chip ${r.ok?'pos':'neg'}">${r.ok?'favorable':'défavorable'}</span></td>
+      <td class="caret">+</td>
+    </tr>
+    <tr class="detail hidden" data-d="${i}"><td colspan="8"><div class="detail-inner">
+      <table class="hist">${hist}</table>
+      <div class="meta"><b>Seuil :</b> ${r.threshold}. Mois de référence ${fMonth(r.ref_month)},
+        publié le ${fDate(r.published)}.<br><br>
+        <a href="${r.url}" target="_blank" rel="noopener">Série complète et historique ↗</a></div>
+    </div></td></tr>`;
+  }).join('');
+
+  document.querySelectorAll('tr.row').forEach(tr=>{
+    const toggle = ()=>{
+      const d = document.querySelector(`tr.detail[data-d="${tr.dataset.i}"]`);
+      const open = d.classList.toggle('hidden')===false;
+      tr.setAttribute('aria-expanded',open);
+      tr.querySelector('.caret').textContent = open?'−':'+';
+    };
+    tr.addEventListener('click',toggle);
+    tr.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();} });
+  });
+
+  // — S&P 500
+  const d50 = (S.close/S.ma50-1), d200 = (S.close/S.ma200-1);
+  $('#spx-stats').innerHTML = `
+    <div class="stat"><div class="k">Clôture</div><div class="v">${nf(S.close)}</div>
+      <div class="d sub">${fDate(S.date)}</div></div>
+    <div class="stat"><div class="k">Écart / MM 50</div>
+      <div class="v ${d50>=0?'pos':'neg'}">${pctS(d50)}</div>
+      <div class="d sub">MM 50 = ${nf(S.ma50)}</div></div>
+    <div class="stat"><div class="k">Écart / MM 200</div>
+      <div class="v ${d200>=0?'pos':'neg'}">${pctS(d200)}</div>
+      <div class="d sub">MM 200 = ${nf(S.ma200)}</div></div>
+    <div class="stat"><div class="k">Marge avant bascule</div>
+      <div class="v">${nf(Math.min(Math.abs(d50),Math.abs(d200))*100,1)} %</div>
+      <div class="d sub">jusqu'à la MM la plus proche</div></div>`;
+
+  $('#spx-note').textContent = `${aboveMA50?'au-dessus':'en dessous'} de la MM 50 · ${aboveMA200?'au-dessus':'en dessous'} de la MM 200`;
+
+  // mini courbe cours + MM
+  const s = S.series, w=420, h=140;
+  const lo=Math.min(...s), hi=Math.max(...s), pad=(hi-lo)*0.1;
+  const X=i=>i*(w/(s.length-1)), Y=v=>h-((v-(lo-pad))/((hi+pad)-(lo-pad)))*h;
+  const path = s.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+  $('#spx-chart').innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img"
+      aria-label="Cours du S&P 500 et moyennes mobiles">
+    <line x1="0" x2="${w}" y1="${Y(S.ma50).toFixed(1)}" y2="${Y(S.ma50).toFixed(1)}" stroke="#7C9AAE" stroke-width="1.2"/>
+    <line x1="0" x2="${w}" y1="${Y(S.ma200).toFixed(1)}" y2="${Y(S.ma200).toFixed(1)}" stroke="#B0A27E" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <path d="${path}" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>
+    <circle cx="${X(s.length-1).toFixed(1)}" cy="${Y(s[s.length-1]).toFixed(1)}" r="3" fill="var(--ink)"/>
+  </svg>`;
+
+  // — calendrier
+  $('#cal').innerHTML = (D.calendar||[]).map(c=>`<b>${fDate(c[1])}</b> — ${c[0]}`).join('<br>');
+}
+
+try{
+  fetch('data.json',{cache:'no-store'})
+    .then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(render)
+    .catch(()=>render(DEMO));
+}catch(e){ render(DEMO); }
+</script>
+</body>
+</html>
