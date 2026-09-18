@@ -1,0 +1,22 @@
+name: update
+on:
+  schedule:
+    - cron: "30 6 * * 1-5"   # jours ouvrés, 6 h 30 UTC (8 h 30 à Paris en été)
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python collect.py
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      - run: |
+          git config user.name  github-actions
+          git config user.email actions@github.com
+          git add data.json
+          git diff --quiet --cached || git commit -m "données du $(date -I)"
+          git push
