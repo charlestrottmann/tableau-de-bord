@@ -1,6 +1,6 @@
 {
  "demo": false,
- "generated_at": "2026-09-18T09:10:51Z",
+ "generated_at": "2026-09-21T06:46:43Z",
  "sources": {
   "cli": "OCDE (SDMX)",
   "spx": "FRED"
@@ -14,7 +14,7 @@
    "threshold": "≥ 50 %",
    "ok": true,
    "ref_month": "2026-08",
-   "published": "2026-08-18",
+   "published": "2026-09-18",
    "detail": "11 des 17 pays en hausse",
    "history": [
     [
@@ -120,33 +120,37 @@
   "indpro": {
    "label": "Production industrielle",
    "code": "FRED · INDPRO · glissement annuel",
-   "value": 0.01079,
-   "display": "+1,1 %",
+   "value": 0.0142,
+   "display": "+1,4 %",
    "threshold": "> 0 %",
    "ok": true,
-   "ref_month": "2026-07",
-   "published": "2026-08-18",
+   "ref_month": "2026-08",
+   "published": "2026-09-18",
    "detail": "indice mensuel, base 2017 = 100",
    "history": [
     [
+     "2026-08",
+     0.0142
+    ],
+    [
      "2026-07",
-     0.01079
+     0.0113
     ],
     [
      "2026-06",
-     0.01289
+     0.01344
     ],
     [
      "2026-05",
-     0.0153
+     0.01658
     ],
     [
      "2026-04",
-     0.01376
+     0.01434
     ],
     [
      "2026-03",
-     0.00707
+     0.00686
     ],
     [
      "2026-02",
@@ -219,10 +223,6 @@
     [
      "2024-09",
      -0.012
-    ],
-    [
-     "2024-08",
-     -0.00405
     ]
    ],
    "fmt": "pct1",
