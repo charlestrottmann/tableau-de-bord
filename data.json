@@ -1,6 +1,6 @@
 {
  "demo": false,
- "generated_at": "2026-10-30T13:20:49Z",
+ "generated_at": "2026-11-02T16:26:29Z",
  "sources": {
   "cli": "OCDE (SDMX)",
   "spx": "FRED"
@@ -378,6 +378,6 @@
   ]
  },
  "next_ggc": "Prochaine évaluation : 2026-11-15",
- "next_gtt": "Prochaine évaluation : 2026-10-30",
+ "next_gtt": "Prochaine évaluation : 2026-11-30",
  "calendar": []
 }
